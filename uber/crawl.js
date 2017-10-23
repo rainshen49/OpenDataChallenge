@@ -1,4 +1,5 @@
 const request = require('request')
+const fs = require('fs')
 const token = "TEE9Azy7gOZD5cQ9I8i5qngO_fV_pAOTvCG1X4tA"
 const bay832 = {
     start_latitude: 43.661679,
@@ -22,7 +23,7 @@ const endpoint = "https://api.uber.com/v1.2/estimates"
 
 function callapi(url) {
     return new Promise((yes, ops) => {
-        console.log('requesting', url)
+        // console.log('requesting', url)
         request({ url, headers }, (err, res, body) => {
             if (err) ops(err); // Print the error if one occurred
             else yes(body); // Print the HTML for the Google homepage.
@@ -49,21 +50,32 @@ function fakeEstimate() {
 }
 
 async function getAll(rangelat, rangelong) {
-    console.log("range", rangelat, rangelong)
+    // console.log("range", rangelat, rangelong)
     const result = new Map()
     const degree = 0.002
     for (let i = rangelat[0]; i < rangelat[1]; i += degree) {
         for (let j = rangelong[0]; j < rangelong[1]; j += degree) {
-            // const all = await getTimeEstimate(i, j)
-            // const uberx = getUberXTime(all)
-            const uberx = fakeEstimate()
+            const all = await getTimeEstimate(i, j)
+            const uberx = getUberXTime(all)
+            // const uberx = fakeEstimate()
             result.set(`${i.toFixed(3)},${j.toFixed(3)}`, uberx)
-            console.log(uberx)
+            // console.log(uberx)
         }
-        console.log(i, 'th group done')
+        // console.log(i, 'th group done')
     }
     return result
 }
+let i = 0
+async function run() {
+    const result = await getAll(rangelat, rangelong)
+    const output = []
+    for (let [location, price] of result) {
+        output.push(`${location}\t${price}\n`)
+    }
+    fs.writeFileSync(`./uberdata/${(new Date()).toLocaleString().replace(/:| /g, "-")}_data.txt`, output.join(''))
+    console.log(i, 'th grab done')
+    i += 1
+    setTimeout(run, 300000)
+}
 
-//todo: map them on a map
-getAll(rangelat, rangelong).then(res => console.log(res))
+run()
