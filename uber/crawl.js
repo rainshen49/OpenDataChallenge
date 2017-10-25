@@ -1,17 +1,17 @@
 const request = require('request')
 const fs = require('fs')
-const token = "TEE9Azy7gOZD5cQ9I8i5qngO_fV_pAOTvCG1X4tA"
+const token = "y9YqlgZXKzplIgMbK6mO1nvHawgaJHbYix3wtnyy"
 const bay832 = {
     start_latitude: 43.661679,
     start_longitude: -79.387141
 }
 
-const south = { lat: 43.644162, long: -79.384392 } //union
+const south = { lat: 43.638871, long: -79.3795452 } //harbourfront
 const north = { lat: 43.687612, long: -79.392548 } // st clair
-const west = { lat: 43.655844, long: -79.435483 } // dufferin mall
-const east = { lat: 43.667592, long: -79.359194 } // ryerson
-const rangelat = [Math.round(Math.min(west.lat, east.lat) * 1000) / 1000, Math.round(Math.max(west.lat, east.lat) * 1000) / 1000]
-const rangelong = [Math.round(Math.min(west.long, east.long) * 1000) / 1000, Math.round(Math.max(west.long, east.long) * 1000) / 1000]
+const west = { lat: 43.646573, long: -79.461256 } // high park
+const east = { lat: 43.667592, long: -79.359194 } // DVP
+const rangelat = [Math.min(north.lat, south.lat), Math.max(north.lat, south.lat)]
+const rangelong = [Math.min(west.long, east.long), Math.max(west.long, east.long)]
 
 const headers = {
     'Authorization': 'Token ' + token,
@@ -34,7 +34,7 @@ function callapi(url) {
 async function getTimeEstimate(lat, long) {
     const url = endpoint + `/time?start_latitude=${lat}&start_longitude=${long}`
     const response = await callapi(url)
-    return response//a string
+    return response //a string
 }
 
 function getUberX(response) {
@@ -42,7 +42,7 @@ function getUberX(response) {
     if (!data) return -1
     const estimate = data.filter(({ localized_display_name }) => localized_display_name.toLowerCase() == "uberx")
     if (estimate.length > 0) return estimate[0].estimate
-    else return -1//in seconds
+    else return -1 //in seconds
 }
 
 async function getPriceEstimate(lat, long) {
@@ -58,16 +58,16 @@ function fakeEstimate() {
 async function getAll(rangelat, rangelong) {
     // console.log("range", rangelat, rangelong)
     const result = new Map()
-    const degree = 0.002
+    const degree = 0.004
     for (let i = rangelat[0]; i < rangelat[1]; i += degree) {
         for (let j = rangelong[0]; j < rangelong[1]; j += degree) {
             // const [time, price] = await Promise.all([getTimeEstimate(i, j), getPriceEstimate(i, j)])
             const time = await getTimeEstimate(i, j)
             const uberx = getUberX(time)
-            // const xprice = getUberX(price)
-            // const uberx = fakeEstimate()
+                // const xprice = getUberX(price)
+                // const uberx = fakeEstimate()
             result.set(`${i.toFixed(3)},${j.toFixed(3)}`, uberx)
-            // console.log(uberx, xprice)
+                // console.log(uberx, xprice)
         }
         // console.log(i, 'th group done')
     }
@@ -81,11 +81,11 @@ async function run() {
     for (let [location, time] of result) {
         output.push(`${location},${time}`)
     }
-    fs.writeFileSync(`./uberdata/${(new Date()).toLocaleString().replace(/:| /g, "-")}.csv`, output.join('\n'))
+    fs.writeFileSync(`./ubercorrect/${(new Date()).toLocaleString().replace(/:| /g, "-")}.csv`, output.join('\n'))
     console.log(i, 'th grab done')
     i += 1
     setTimeout(run, 600000)
 }
 
 run()
-// getAll(rangelat, rangelong)
+    // getAll(rangelat, rangelong)
