@@ -7,9 +7,9 @@ const bay832 = {
 }
 
 const south = { lat: 43.644162, long: -79.384392 } //union
-const north = { lat: 43.667692, long: -79.392457 } // ROM
-const west = { lat: 43.654841, long: -79.402228 } // kensington market
-const east = { lat: 43.657860, long: -79.378655 } // ryerson
+const north = { lat: 43.687612, long: -79.392548 } // st clair
+const west = { lat: 43.655844, long: -79.435483 } // dufferin mall
+const east = { lat: 43.667592, long: -79.359194 } // ryerson
 const rangelat = [Math.round(Math.min(west.lat, east.lat) * 1000) / 1000, Math.round(Math.max(west.lat, east.lat) * 1000) / 1000]
 const rangelong = [Math.round(Math.min(west.long, east.long) * 1000) / 1000, Math.round(Math.max(west.long, east.long) * 1000) / 1000]
 
@@ -37,12 +37,18 @@ async function getTimeEstimate(lat, long) {
     return response//a string
 }
 
-function getUberXTime(response) {
-    const data = JSON.parse(response).times
+function getUberX(response) {
+    const data = JSON.parse(response).times || JSON.parse(response).prices
     if (!data) return -1
-    const estimate = data.filter(({ localized_display_name }) => localized_display_name.toLowerCase() == "ubersuv")
+    const estimate = data.filter(({ localized_display_name }) => localized_display_name.toLowerCase() == "uberx")
     if (estimate.length > 0) return estimate[0].estimate
     else return -1//in seconds
+}
+
+async function getPriceEstimate(lat, long) {
+    const url = endpoint + `/price?start_latitude=${lat}&start_longitude=${long}&end_latitude=${lat}&end_longitude=${long}`
+    const response = await callapi(url)
+    return response
 }
 
 function fakeEstimate() {
@@ -55,11 +61,13 @@ async function getAll(rangelat, rangelong) {
     const degree = 0.002
     for (let i = rangelat[0]; i < rangelat[1]; i += degree) {
         for (let j = rangelong[0]; j < rangelong[1]; j += degree) {
-            const all = await getTimeEstimate(i, j)
-            const uberx = getUberXTime(all)
+            // const [time, price] = await Promise.all([getTimeEstimate(i, j), getPriceEstimate(i, j)])
+            const time = await getTimeEstimate(i, j)
+            const uberx = getUberX(time)
+            // const xprice = getUberX(price)
             // const uberx = fakeEstimate()
             result.set(`${i.toFixed(3)},${j.toFixed(3)}`, uberx)
-            // console.log(uberx)
+            // console.log(uberx, xprice)
         }
         // console.log(i, 'th group done')
     }
@@ -67,15 +75,17 @@ async function getAll(rangelat, rangelong) {
 }
 let i = 0
 async function run() {
+    console.log(i, 'th grab start')
     const result = await getAll(rangelat, rangelong)
-    const output = []
-    for (let [location, price] of result) {
-        output.push(`${location}\t${price}\n`)
+    const output = ["lat,long,time"]
+    for (let [location, time] of result) {
+        output.push(`${location},${time}`)
     }
-    fs.writeFileSync(`./uberdata/${(new Date()).toLocaleString().replace(/:| /g, "-")}_data.txt`, output.join(''))
+    fs.writeFileSync(`./uberdata/${(new Date()).toLocaleString().replace(/:| /g, "-")}.csv`, output.join('\n'))
     console.log(i, 'th grab done')
     i += 1
-    setTimeout(run, 300000)
+    setTimeout(run, 600000)
 }
 
 run()
+// getAll(rangelat, rangelong)
