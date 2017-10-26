@@ -2,8 +2,9 @@
 // parameter when you first load the API. For example:
 // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=visualization">
 
-let map;
-const files = ["2017-10-25-19-24-46.csv", "2017-10-25-19-35-16.csv", "2017-10-25-19-45-06.csv"]
+let map, heatmap;
+// const files = ["2017-10-25-19-24-46.csv", "2017-10-25-19-35-16.csv", "2017-10-25-19-45-06.csv"]
+
 async function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
         zoom: 13,
@@ -14,10 +15,11 @@ async function initMap() {
     const transitLayer = new google.maps.TransitLayer();
     transitLayer.setMap(map);
     let hm
-    const points = await Promise.all(files.map(filename => getPoints(filename)))
-    for (let i = 0; i < 10; i++) {
-        await showmap(map, points[i % 3], 2000)
-    }
+        // const points = await Promise.all(files.map(filename => getPoints(filename)))
+        // for (let i = 0; i < 10; i++) {
+        //     await showmap(map, points[i % 3], 2000)
+        // }
+    heatmap = await showmap(map, await getPoints("big2017-10-25-22-37-38.csv"))
 }
 
 async function showmap(map, points, duration = 0) {
@@ -37,7 +39,7 @@ function toggleHeatmap() {
 
 function weightedPoints(lat, long, value) {
     // value is discrete
-    const degree = 0.004
+    const degree = 0.006
     if (value === -1) return []
     const points = new Array(value)
     return points.fill([lat, long])
@@ -53,7 +55,7 @@ function renderMap(map, data) {
         data: data,
         map: map
     });
-    heatmap.set('radius', 4);
+    heatmap.set('radius', 6);
     return heatmap
 }
 
