@@ -2,8 +2,8 @@
 // parameter when you first load the API. For example:
 // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=visualization">
 
-let map, heatmap;
-
+let map;
+const files = ["2017-10-25-19-24-46.csv", "2017-10-25-19-35-16.csv", "2017-10-25-19-45-06.csv"]
 async function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
         zoom: 13,
@@ -13,12 +13,22 @@ async function initMap() {
 
     const transitLayer = new google.maps.TransitLayer();
     transitLayer.setMap(map);
+    let hm
+    const points = await Promise.all(files.map(filename => getPoints(filename)))
+    for (let i = 0; i < 10; i++) {
+        await showmap(map, points[i % 3], 2000)
+    }
+}
 
-    heatmap = new google.maps.visualization.HeatmapLayer({
-        data: await getPoints(),
-        map: map
-    });
-    heatmap.set('radius', 4);
+async function showmap(map, points, duration = 0) {
+    if (duration == 0) {
+        return renderMap(map, points)
+    } else {
+        const hmap = renderMap(map, points)
+        await new Promise(accept => setTimeout(accept, duration))
+        setTimeout(() => hmap.setMap(null), 200)
+        return null
+    }
 }
 
 function toggleHeatmap() {
@@ -28,6 +38,7 @@ function toggleHeatmap() {
 function weightedPoints(lat, long, value) {
     // value is discrete
     const degree = 0.004
+    if (value === -1) return []
     const points = new Array(value)
     return points.fill([lat, long])
         .map(([lat, long]) => new google.maps.LatLng(lat + degree * (Math.random() - 0.5), long + degree * (Math.random() - 0.5)))
@@ -36,26 +47,25 @@ function weightedPoints(lat, long, value) {
 function changeOpacity() {
     heatmap.set('opacity', heatmap.get('opacity') ? null : 0.3);
 }
-// Heatmap data: 500 Points
-async function getPoints() {
-    const data = await fetchData('2017-10-25-19-24-46.csv')
+
+function renderMap(map, data) {
+    const heatmap = new google.maps.visualization.HeatmapLayer({
+        data: data,
+        map: map
+    });
+    heatmap.set('radius', 4);
+    return heatmap
+}
+
+async function getPoints(filename) {
+    const data = await fetchData(filename)
     const points = []
     data.map(({ lat, long, value }) => points.push(...weightedPoints(lat, long, value)))
     return points
-        // const south = { lat: 43.644162, long: -79.384392 } //union
-        // const north = { lat: 43.687612, long: -79.392548 } // st clair
-        // const west = { lat: 43.655844, long: -79.435483 } // dufferin mall
-        // const east = { lat: 43.667592, long: -79.359194 } // ryerson
-        // return [
-        //     ...weightedPoints(south.lat, south.long, 4),
-        //     ...weightedPoints(north.lat, north.long, 4),
-        //     ...weightedPoints(west.lat, west.long, 4),
-        //     ...weightedPoints(east.lat, east.long, 4),
-        // ]
 }
 
 async function fetchData(filename) {
-    const csv = await fetch("./data/" + filename).then(res => res.text())
+    const csv = await fetch("/uber/ubercorrect/" + filename).then(res => res.text())
     const data = csv.split('\n')
         .slice(1).map(line => line.split(','))
         .map(([lat, long, time]) => ([parseFloat(lat), parseFloat(long), parseInt(time, 10)]))
