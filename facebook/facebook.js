@@ -11,7 +11,8 @@ async function main() {
     const results = ["name,lat,long,start_time,end_time,attending_count,type,id"]
     const data = await Promise.all(ids.slice(0, 100).map(async id => {
         try {
-            const { name, place, start_time, end_time, attending_count, type } = await getEventDetail(id, ["name", "place", "start_time", "end_time", "attending_count", "declined_count", "interested_count", "maybe_count", "noreply_count", "type"])
+            const response = await getEventDetail(id, ["name", "place", "start_time", "end_time", "attending_count", "declined_count", "interested_count", "maybe_count", "noreply_count", "type"])
+            const { name, place, start_time, end_time, attending_count, type } = response
             let latitude = "", longitude = ""
             if ('location' in place) {
                 latitude = place.location.latitude
@@ -24,7 +25,7 @@ async function main() {
             return [`"${name}"`, latitude, longitude, start_time, end_time, attending_count, type, id].join(',')
         } catch (e) {
             console.error(id, e)
-            return ""
+            return "Error"
         }
     }))
     results.push(...data)
@@ -38,52 +39,8 @@ async function getEventDetail(id, fields = []) {
     return result
 }
 
-function summaryAttendance(ev) {
-    // ev has shape {attending, declined, interested}
-    const result = {}
-    console.log('what they got insinde\n \n', JSON.stringify(ev, null, 2))
-    for (let key in ev) {
-        if (key === "id" || key == "name") {
-            result[key] = ev[key]
-        } else {
-            result[key] = ev[key].data.length
-        }
-    }
-    return result
-}
-
-// function flatten(list) {
-//     // flatten a list by one level
-//     const result = []
-//     // console.log(list)
-//     list.forEach(items => {
-//         result.push(...items)
-//     })
-//     return result
-// }
-
-// function callAPI(endpoint, prev = []) {
-//     // console.log('--------------- API -----------------\n', endpoint)
-//     return new Promise((yes, ops) => {
-//         https.get(endpoint, (res) => {
-//             const chunks = []
-//             res.on('data', chunk => chunks.push(chunk.toString())).on('error', ops)
-//             res.on('end', () => {
-//                 const result = JSON.parse(chunks.join(''))
-//                 // console.log('response', result)
-//                 prev.push(result.data)
-//                 if ('paging' in result && 'next' in result.paging) {
-//                     callAPI(result.paging.next, prev).then(yes).catch(ops)
-//                 } else {
-//                     // base case, reaching the end
-//                     yes(prev)
-//                 }
-//             })
-//         }).on('error', ops)
-//     })
-// }
-
 function callSingleAPI(endpoint) {
+    // console.log(endpoint)
     return new Promise((yes, ops) => {
         https.get(endpoint, (res) => {
             const chunks = []
