@@ -95,7 +95,7 @@ function changeOpacity() {
 }
 
 async function fetchData(filename) {
-    const csv = await fetch("/uber/ubercorrect/" + filename).then(res => res.text())
+    const csv = await fetch("/OpenDataChallenge/uber/ubercorrect/" + filename).then(res => res.text())
     const data = csv.split('\n')
         .slice(1).map(line => line.split(','))
         .map(([lat, long, time]) => ([parseFloat(lat), parseFloat(long), parseInt(time, 10)]))
