@@ -41,4 +41,4 @@ function Download(url, filename) {
     a.click()
 }
 
-getEnoughData(100, selector)
+// getEnoughData(100, selector)

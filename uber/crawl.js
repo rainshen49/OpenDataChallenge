@@ -15,8 +15,12 @@ const rhnorth = { lat: 43.918067, long: -79.441300 } // summit golf club
 const rhwest = { lat: 43.887270, long: -79.493485 } // maple downs golf course
 const rheast = { lat: 43.901495, long: -79.391003 } // costco
 const markham = { lat: 43.845262, long: -79.337210 }
-let rangelat, rangelong, prefix = "downtown",
-    degree
+const sonycenter = { lat: 43.646662, long: -79.376052 }
+const staples = { lat: 43.652845, long: -79.388036 }
+const queenyonge = { lat: 43.652442, long: -79.379073 }
+const union = { lat: 43.644244, long: -79.383944 }
+let rangelat, rangelong, prefix = "",
+    degree, interval = 30
 const arg = process.argv.slice(2)[0]
 console.log('crawling', arg)
 if (arg === "north") {
@@ -25,11 +29,13 @@ if (arg === "north") {
     prefix = "rhill"
     token = "VkJBsTM1zFEsp8L0f8r-rZF8Qkh8Df5z_wBcJstR"
     degree = 0.004
-} else if (arg == "downtown") {
-    rangelat = [Math.min(north.lat, south.lat), Math.max(north.lat, south.lat)]
-    rangelong = [Math.min(west.long, east.long), Math.max(west.long, east.long)]
+} else if (arg == "fin") {
+    rangelat = [Math.min(sonycenter.lat, staples.lat), Math.max(sonycenter.lat, staples.lat)]
+    rangelong = [Math.min(sonycenter.long, staples.long), Math.max(sonycenter.long, staples.long)]
     token = "y9YqlgZXKzplIgMbK6mO1nvHawgaJHbYix3wtnyy"
-    degree = 0.004
+    degree = 0.001
+    prefix = "fin"
+    interval = 3
 } else {
     rangelat = [Math.min(west.lat, markham.lat), Math.max(west.lat, markham.lat)]
     rangelong = [Math.min(west.long, markham.long), Math.max(west.long, markham.long)]
@@ -59,7 +65,7 @@ function callapi(url) {
 async function getTimeEstimate(lat, long) {
     const url = endpoint + `/time?start_latitude=${lat}&start_longitude=${long}`
     const response = await callapi(url)
-    return response //a string
+    return response
 }
 
 function getUberX(response) {
@@ -87,9 +93,9 @@ async function getAll(rangelat, rangelong) {
         for (let j = rangelong[0]; j < rangelong[1]; j += degree) {
             const time = await getTimeEstimate(i, j)
             const uberx = getUberX(time)
-                // const uberx = fakeEstimate()
-            result.set(`${i.toFixed(3)},${j.toFixed(3)}`, uberx)
-                // console.log(uberx, xprice)
+            // const uberx = fakeEstimate()
+            result.set(`${i},${j}`, uberx)
+            // console.log(uberx, xprice)
         }
         // console.log(i, 'th group done')
     }
@@ -98,14 +104,15 @@ async function getAll(rangelat, rangelong) {
 let i = 0
 async function run() {
     setTimeout(run, 60000)
-    if ((new Date()).getMinutes() % 30 === 0) {
-        console.log(i, 'th grab start', new Date())
+    if ((new Date()).getMinutes() % interval === 0) {
+        const startTime = new Date()
+        console.log(i, 'th grab start', startTime)
         const result = await getAll(rangelat, rangelong)
         const output = ["lat,long,time"]
         for (let [location, time] of result) {
             output.push(`${location},${time}`)
         }
-        fs.writeFileSync(`./ubercorrect/${prefix}${(new Date()).toLocaleString().replace(/:| /g, "-")}.csv`, output.join('\n'))
+        fs.writeFileSync(`./ubercorrect/${prefix}${startTime.toLocaleString().replace(/:| /g, "-")}.csv`, output.join('\n'))
         console.log(i, 'th grab done')
         i += 1
     }

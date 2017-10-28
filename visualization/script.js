@@ -1,7 +1,8 @@
-// todo: fix first heatmap not show
+// todo: fix max intensity for fb events
 let map, heatmap;
-const fbfiles = ["100events.csv"]
+const fbfiles = ["100events.dat"]
 const uberfiles = [
+    'fin2017-10-28-00-38-29.csv',
     'big2017-10-26-00-07-45.csv',
     'big2017-10-26-00-37-29.csv',
     'big2017-10-26-01-07-43.csv',
@@ -112,10 +113,11 @@ async function initMap() {
     transitLayer.setMap(map);
     heatmap = new google.maps.visualization.HeatmapLayer({
         data: [],
-        map: map
+        map: map,
     });
     heatmap.set('radius', 60);
-    showuber(heatmap)
+    // showuber(heatmap)
+    showfb(heatmap)
 }
 function changeRadius(ev) {
     heatmap.set('radius', ev.target.value);
@@ -143,7 +145,9 @@ async function showuber(hm) {
 }
 
 async function showfb(hm) {
-    const fbpoints = await Promise.all(fbfiles.map(filename => fetchData(filename, "facebook")))
+    const fbpoints = await Promise.all(fbfiles.map(filename => fetchtData(filename, "facebook").then(processFbdata)))
+    title.textContent = fbfiles[0]
+    hm.setData(fbpoints[0])
 }
 
 async function fetchData(filename, prefix) {
@@ -152,9 +156,16 @@ async function fetchData(filename, prefix) {
     return data
 }
 
+async function fetchtData(filename, prefix) {
+    const csv = await fetch(`/OpenDataChallenge/${prefix}/${filename}`).then(res => res.text())
+    const data = csv.split('\n').map(line => line.split('\t'))
+    return data
+}
+
 function weightedpoint(lat, long, value) {
     // value is discrete
-    return { location: new google.maps.LatLng(lat, long), weight: Math.round(10000 / value) }
+    // console.log(lat, long, value)
+    return { location: new google.maps.LatLng(lat, long), weight: value }
 }
 
 function processUberData(list) {
@@ -162,20 +173,18 @@ function processUberData(list) {
         .map(([lat, long, time]) => ([parseFloat(lat), parseFloat(long), parseInt(time, 10)]))
         .map(([lat, long, time]) => ({ lat, long, value: time }))
     return [
-        { location: new google.maps.LatLng(42.652, -79.381), weight: 0 },
+        { location: new google.maps.LatLng(42.652, -79.381), weight: 1 },
         { location: new google.maps.LatLng(42.652, -79.381), weight: 17 },
-        ...points.map(({ lat, long, value }) => weightedpoint(lat, long, value))]
+        ...points.map(({ lat, long, value }) => weightedpoint(lat, long, Math.round(1000 / value)))]
 }
 
 
 function processFbdata(list) {
     const points = list.slice(1)
-        .map(([name, lat, long, attending_count]) => ([name, parseFloat(lat), parseFloat(long), parseInt(attending_count, 10)]))
-        .map(([name, lat, lng, attending_count]) => ({ label, position: { lat, lng }, weight: attending_count }))
-    return [
-        { location: new google.maps.LatLng(42.652, -79.381), weight: 0 },
-        { location: new google.maps.LatLng(42.652, -79.381), weight: 17 },
-        ...points.map(({ lat, long, value }) => weightedpoint(lat, long, value))]
+        .filter(([name]) => name !== "Error")
+        .map(([name, lat, long, start_time, end_time, attending_count, type, id]) => ([name, parseFloat(lat), parseFloat(long), parseInt(attending_count, 10)]))
+        .map(([name, lat, lng, attending_count]) => ({ label: name, position: { lat, lng }, weight: attending_count }))
+    return points.map(({ label, position: { lat, lng }, weight }) => weightedpoint(lat, lng, weight ** 0.1))
 }
 
 document.querySelector('#radius').addEventListener('input', changeRadius)
