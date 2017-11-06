@@ -1,39 +1,109 @@
 /* Always set the map height explicitly to define the size of the div
   * element that contains the map. */
-  #map {
-  height: 100%;
+
+#map {
+    height: 100%;
 }
+
+* {
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+
 /* Optional: Makes the sample page fill the window. */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', 'sans-serif';
+    overflow: hidden;
 }
+
 #floating-panel {
-  position: absolute;
-  top: 10px;
-  left: 25%;
-  z-index: 5;
-  background-color: #fff;
-  padding: 5px;
-  border: 1px solid #999;
-  text-align: center;
-  font-family: 'Roboto','sans-serif';
-  line-height: 30px;
-  padding-left: 10px;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 5;
+    background-color: #fff;
+    text-align: center;
+    padding: 0.5rem;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
+    border-radius: 2px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
 }
-#floating-panel {
-  background-color: #fff;
-  border: 1px solid #999;
-  left: 25%;
-  padding: 5px;
-  position: absolute;
-  top: 10px;
-  z-index: 5;
+
+#floating-panel>* {
+    margin: 0 0.2rem;
 }
-#title{
-  position: fixed;
-  top: 3%;
-  background-color: rgba(255,255,255,0.8);
-  z-index: 1;
+
+.timeline {
+    z-index: 5;
+    position: fixed;
+    bottom: 1rem;
+    left: 3rem;
+    right: 3rem;
+    display: flex;
+    background-color: #fff;
+    justify-content: space-between;
+    padding: 0.5rem;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
+    border-radius: 2px;
+}
+
+.timeline>input {
+    width: 80%;
+}
+
+.fab {
+    position: fixed;
+    right: 1rem;
+    top: calc(50% - 10rem);
+    z-index: 5;
+}
+
+.fab>img {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background-color: #00adef;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
+    cursor: pointer;
+    display: block;
+    margin: 0.5rem 0;
+    opacity: 0.6;
+}
+
+.fab:not(:hover)>img:not(.active) {
+    visibility: hidden;
+}
+
+img.active {
+    opacity: 1;
+    box-shadow: rgba(0, 0, 0, 0.7) 0px 1px 4px -1px;
+}
+
+#add {
+    opacity: 0.9;
+    padding: 0.2rem;
+    visibility: visible;
+}
+
+button {
+    padding: 0.5rem;
+    font-size: 1rem;
+    background-color: white;
+    border: 1px solid #00adef;
+    color: #00adef;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+button:active {
+    background-color: #00adef;
+    color: white;
 }
